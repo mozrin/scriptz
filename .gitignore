@@ -1,0 +1,27 @@
+# DO NOT track these SPECIFIC project files.
+.env
+
+# DO NOT track these SPECIFIC project directories.
+
+.devcontainer/**/log/*                  
+.devcontainer/**/data/*
+
+# TRACK these SPECIFIC project files.
+
+!/**/*.md
+
+# DO NOT track these potentially present files and folders.
+
+**/node_modules
+**/vendor
+**/tmp/*
+**/temp/*
+**/cache/*
+**/wiki/*
+bin/*
+test/*
+
+# ALWAYS TRACK these potentially present files and folders.
+
+!**/.gitkeep
+!test/test*.sh
