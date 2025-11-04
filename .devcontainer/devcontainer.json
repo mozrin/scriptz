@@ -1,5 +1,5 @@
 {
-    "name": "devlite_c",
+    "name": "scriptz",
     "initializeCommand": "/bin/bash .devcontainer/initializeCommand.sh",
     "postCreateCommand": "/bin/bash .devcontainer/postCreateCommand.sh",
     "postStartCommand": "/bin/bash .devcontainer/postStartCommand.sh",
@@ -8,7 +8,7 @@
     "updateContentCommand": "/bin/bash .devcontainer/updateContentCommand.sh",
     "dockerComposeFile": "../docker-compose.yml",
     "service": "ubuntu",
-    "workspaceFolder": "/devlite_c",
+    "workspaceFolder": "/scriptz",
     "containerEnv": {
         "DEVLITE_PROJECT_NAME": "${localWorkspaceFolderBasename}",
         "DEVLITE_LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
