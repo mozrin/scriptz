@@ -18,10 +18,7 @@
 **/temp/*
 **/cache/*
 **/wiki/*
-bin/*
-test/*
 
 # ALWAYS TRACK these potentially present files and folders.
 
 !**/.gitkeep
-!test/test*.sh

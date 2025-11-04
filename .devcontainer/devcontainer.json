@@ -28,9 +28,9 @@
                 "terminal.integrated.defaultProfile.linux": "bash"
             },
             "extensions": [
-                "ms-vscode.cpptools",
-                "ms-vscode.cmake-tools",
-                "ms-vscode.theme-cpp"
+                "timonwong.shellcheck",
+                "foxundermoon.shell-format",
+                "mads-hartmann.bash-ide-vscode"
             ]
         }
     },
