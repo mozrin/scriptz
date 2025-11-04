@@ -1,3 +1,9 @@
+#!/bin/bash
+
+# version.sh — Get the versions for everything.
+# by Moztopia
+# version 0.0.1
+
 version() {
   echo "lsb_release -a"
   echo ""
