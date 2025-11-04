@@ -1,0 +1,12 @@
+No comments in my code!
+Do not give me files that have not changed!
+
+This is a set of scripts that I use to run my development world. I keep it in a git repo
+
+https://github.com/mozrin/my-scripts.git
+
+There is a bootstrap.sh that needs to be written ... when run ... it should go out and get all the .sh files from the folders and copy them to a location (think install) on my ubuntu machine so that they will be in the path and can be found. Just the scripts and not anything else and no folder structures should be copied. Ignore any file that starts with test* ... including test.sh.
+
+No comments in my code
+Do not give me files that have not changed.
+Every file that is changed or new should be given to me in a separate copy/paste block.
