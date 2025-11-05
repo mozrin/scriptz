@@ -31,7 +31,9 @@
                 "timonwong.shellcheck",
                 "foxundermoon.shell-format",
                 "mads-hartmann.bash-ide-vscode",
-                "mikestead.dotenv"
+                "mikestead.dotenv",
+                "Gruntfuggly.todo-tree",
+                "esbenp.prettier-vscode"
             ]
         }
     },

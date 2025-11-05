@@ -1,11 +1,24 @@
-No comments in my code!
-Do not give me files that have not changed!
-
 This is a set of scripts that I use to run my development world. I keep it in a git repo
 
-https://github.com/mozrin/my-scripts.git
+https://github.com/moztopia/scriptz.git
 
-There is a bootstrap.sh that needs to be written ... when run ... it should go out and get all the .sh files from the folders and copy them to a location (think install) on my ubuntu machine so that they will be in the path and can be found. Just the scripts and not anything else and no folder structures should be copied. Ignore any file that starts with test* ... including test.sh.
+Each command exists in the src/scripts/<command_name> folder under a <command_name>.sh
+
+I would like a script that will pull the latest release from git and put it in a folder called:
+
+$HOME/.local/moztopia/scriptz/* (just the .sh files and none of their individual folders)
+
+AND ... put a symlink for execution in the folder called:
+
+$HOME/.local/bin
+
+If a file already exists in either of these locations, check to see if it has the line:
+
+# by Moztopia
+
+If it has that line, replace it. If it does not have that line, rename our file by putting a moz_ in front of the name. Note this in the log and the output.
+
+Call this script ... install_scriptz.sh ... keep a log because we need to make an uninstall_scriptz.sh later.
 
 No comments in my code
 Do not give me files that have not changed.
