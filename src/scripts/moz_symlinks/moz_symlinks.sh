@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-BASE="$HOME/Code/scriptz/src/scripts"
+BASE="$DEVLITE_CONTAINER_WORKSPACE_FOLDER/.scripts"
 BIN="/usr/local/bin"
 SELF="$(readlink -f "$0")"
 
@@ -43,7 +43,7 @@ detailed_help() {
     cat <<EOF
 Moztopia Scriptz Symlinks Manager
 --------------------------------------------------------------------
-This utility crawls the ~/Code/scriptz/src/scripts/ folder, finds all
+This utility crawls the "$DEVLITE_CONTAINER_WORKSPACE_FOLDER/.scripts/ folder, finds all
 subfolders containing .sh scripts, and manages symlinks in /usr/local/bin.
 
 Syntax:

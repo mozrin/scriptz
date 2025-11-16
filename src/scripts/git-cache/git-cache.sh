@@ -3,11 +3,12 @@
 # git-cache.sh - manage Git index (cache) operations
 #
 # Usage:
-#   git-cache.sh delete <filepath> [--dryrun] [--quiet]
+#   git-cache.sh delete <filepath> [--dry-run] [--quiet]
 #   git-cache.sh --help
 #
 
 set -euo pipefail
+set -f  # disable pathname expansion so wildcards are passed literally
 
 show_help() {
   cat <<EOF
@@ -17,41 +18,52 @@ Commands:
   delete <filepath>   Remove a file or folder from Git's index (cache)
 
 Options:
-  --dryrun            Show what would be removed, but do not execute
+  --dry-run           Show what would be removed, but do not execute
   --quiet             Suppress output
   --help              Show this help message
 
 Examples:
-  git-cache.sh delete .devcontainer/mariadb/data --dryrun
+  git-cache.sh delete '.pai/*.txt' --dry-run
   git-cache.sh delete .devcontainer/redis/log --quiet
 EOF
 }
 
 delete_file() {
-  local filepath="$1"
   local dryrun=false
   local quiet=false
+  local args=()
 
-  shift
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --dryrun) dryrun=true ;;
+      --dry-run) dryrun=true ;;
       --quiet) quiet=true ;;
       --help) show_help; exit 0 ;;
-      *) echo "Unknown option: $1" >&2; exit 1 ;;
+      *) args+=("$1") ;;
     esac
     shift
   done
 
+  if [[ ${#args[@]} -eq 0 ]]; then
+    echo "Error: delete requires a <filepath>" >&2
+    exit 1
+  fi
+
+  # Fail if more than one filepath argument was passed (means glob expanded)
+  if [[ ${#args[@]} -gt 1 ]]; then
+    echo "Error: wildcard expanded into multiple files. Quote or escape the pattern to pass literally." >&2
+    echo "Example: git-cache.sh delete '.pai/*.txt' --dry-run" >&2
+    exit 1
+  fi
+
   if [[ "$dryrun" == true ]]; then
-    echo "[DRYRUN] Would run: git rm -r --cached \"$filepath\""
+    echo "[DRYRUN] Would run: git rm -r --cached ${args[*]}"
     return 0
   fi
 
   if [[ "$quiet" == true ]]; then
-    git rm -r --cached "$filepath" >/dev/null 2>&1 || true
+    git rm -r --cached "${args[@]}" >/dev/null 2>&1 || true
   else
-    git rm -r --cached "$filepath"
+    git rm -r --cached "${args[@]}"
   fi
 }
 
@@ -67,7 +79,7 @@ main() {
         echo "Error: delete requires a <filepath>" >&2
         exit 1
       fi
-      delete_file "$2" "${@:3}"
+      delete_file "${@:2}"
       ;;
     --help|-h)
       show_help
