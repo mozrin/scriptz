@@ -1,4 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/bash
+#
+# You can run this to install scriptz on your machine. This tool is automatically included in 
+# all Devlite Containers in the .devcontainer/postAttachCommand.sh lifecycle hook.
+
 set -euo pipefail
 
 REPO_URL="https://github.com/mozrin/scriptz"
