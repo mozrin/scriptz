@@ -78,10 +78,15 @@ else
   tmpdir="$(mktemp -d)"
   curl -L "$REPO_URL" -o "$tmpdir/repo.tar.gz"
   if ! $DRYRUN; then
+    # Extract src folder
     tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=2 "*/src/*"
     cp -r "$tmpdir/src/"* "$SCRIPTS_DIR/"
-    curl -L "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/$VERSION/src/scripts/scriptz/scriptz.sh" -o "$SCRIPTZ_DIR/scriptz.sh"
-    curl -L "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/$VERSION/README.md" -o "$LIB_DIR/README.md"
+    # Extract scriptz.sh
+    tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=2 "*/src/scripts/scriptz/scriptz.sh"
+    cp "$tmpdir/src/scripts/scriptz/scriptz.sh" "$SCRIPTZ_DIR/"
+    # Extract README.md from tarball root
+    tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=1 "*/README.md" || true
+    [[ -f "$tmpdir/README.md" ]] && cp "$tmpdir/README.md" "$LIB_DIR/"
   fi
   rm -rf "$tmpdir"
   echo "[install] src/ fetched and installed"
@@ -97,5 +102,32 @@ if ! $DRYRUN; then
 fi
 echo "[install] Linked $TARGET → $SOURCE"
 
+# Write version metadata
+META_FILE="$LIB_DIR/VERSION.json"
+if ! $DRYRUN; then
+  cat > "$META_FILE" <<EOF
+{
+  "name": "$VERSION",
+  "installed_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "source": "$REPO_URL"
+}
+EOF
+fi
+
 echo "[install] Installed version: $VERSION"
 echo "[install] Done."
+
+# Dump README.md to screen with Markdown formatting
+README_FILE="$LIB_DIR/README.md"
+if [[ -f "$README_FILE" ]]; then
+  echo "[install] Displaying README.md for version $VERSION..."
+  if command -v bat >/dev/null 2>&1; then
+    bat --style=plain --paging=always "$README_FILE"
+  elif command -v less >/dev/null 2>&1; then
+    less "$README_FILE"
+  else
+    cat "$README_FILE"
+  fi
+else
+  echo "[install] WARNING: README.md not found in $LIB_DIR"
+fi
