@@ -30,24 +30,19 @@ done
 
 BIN_DIR="$INSTALL_FOLDER/bin"
 
-# Determine version and tarball URL
+# Default to main branch if no version specified
 if [[ -z "$VERSION" ]]; then
-  echo "[install] No version specified, fetching latest release..."
-  VERSION="$(curl -s https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest \
-             | grep -Po '"tag_name": "\K.*?(?=")' || echo unknown)"
-  REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/tags/$VERSION.tar.gz"
-else
-  echo "[install] Using specified version: $VERSION"
-  if [[ "$VERSION" =~ ^v[0-9] ]]; then
-    REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/tags/$VERSION.tar.gz"
-  else
-    REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/heads/$VERSION.tar.gz"
-  fi
+  VERSION="main"
+  echo "[install] No version specified, defaulting to branch: $VERSION"
 fi
 
-# Validate tarball URL
-if ! curl -s --head "$REPO_URL" | grep "200 OK" >/dev/null; then
-  echo "[install] ERROR: Version '$VERSION' not found in repo."
+# Validate against tags and branches
+if curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/tags" | grep -q "\"name\": \"$VERSION\""; then
+  REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/tags/$VERSION.tar.gz"
+elif curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches" | grep -q "\"name\": \"$VERSION\""; then
+  REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/heads/$VERSION.tar.gz"
+else
+  echo "[install] ERROR: Version '$VERSION' not found as tag or branch."
   exit 1
 fi
 
