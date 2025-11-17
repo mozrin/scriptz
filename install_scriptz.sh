@@ -1,128 +1,39 @@
 #!/usr/bin/env bash
-#
-# install_scriptz.sh - installer for Moztopia scriptz
-#
-# Usage:
-#   ./install_scriptz.sh [--install-folder=/path] [--version=<tag|branch>] [--dry-run]
-#
-
 set -euo pipefail
 
-INSTALL_FOLDER="/usr/local"
-DRYRUN=false
-VERSION=""
-REPO_OWNER="mozrin"
-REPO_NAME="scriptz"
+REPO_URL="https://github.com/mozrin/scriptz"
+TARGET_DIR="/usr/local/lib/scripts-main"
+BIN_DIR="/usr/local/bin"
 
-# Parse options
-for arg in "$@"; do
-  case "$arg" in
-    --install-folder=*) INSTALL_FOLDER="${arg#*=}" ;;
-    --version=*)        VERSION="${arg#*=}" ;;
-    --dry-run)          DRYRUN=true ;;
-    --help)
-      echo "Usage: ./install_scriptz.sh [--install-folder=/path] [--version=<tag|branch>] [--dry-run]"
-      exit 0
-      ;;
-    *) echo "[install] Unknown option: $arg"; exit 1 ;;
-  esac
+rm -rf "${TARGET_DIR}"
+mkdir -p "${TARGET_DIR}"
+
+cat > "${TARGET_DIR}/uninstall_scriptz.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+BIN_DIR="/usr/local/bin"
+TARGET_DIR="/usr/local/lib/scripts-main"
+
+find "${BIN_DIR}" -type l -exec bash -c '
+  for link; do
+    target=$(readlink "$link")
+    case "$target" in
+      "${TARGET_DIR}"/*) rm -f "$link";;
+    esac
+  done
+' bash {} +
+
+rm -rf "${TARGET_DIR}"
+rm -f "${TARGET_DIR}/uninstall_scriptz.sh"
+EOF
+
+curl -L "${REPO_URL}/archive/refs/heads/main.tar.gz" \
+  | tar --strip-components=2 -xz -C "${TARGET_DIR}" "scriptz-main/src/scripts"
+
+find "${TARGET_DIR}" -type f -name "*.sh" | while read -r script; do
+    script_name=$(basename "${script}" .sh)
+    ln -sf "${script}" "${BIN_DIR}/${script_name}"
 done
 
-BIN_DIR="$INSTALL_FOLDER/bin"
-
-# Default to main branch if no version specified
-if [[ -z "$VERSION" ]]; then
-  VERSION="main"
-  echo "[install] No version specified, defaulting to branch: $VERSION"
-fi
-
-# Validate against tags and branches
-if curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/tags" | grep -q "\"name\": \"$VERSION\""; then
-  REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/tags/$VERSION.tar.gz"
-elif curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches" | grep -q "\"name\": \"$VERSION\""; then
-  REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/heads/$VERSION.tar.gz"
-else
-  echo "[install] ERROR: Version '$VERSION' not found as tag or branch."
-  exit 1
-fi
-
-LIB_DIR="$INSTALL_FOLDER/lib/scriptz-$VERSION"
-SCRIPTS_DIR="$LIB_DIR/scripts"
-SCRIPTZ_DIR="$SCRIPTS_DIR/scriptz"
-
-echo "[install] Target bin: $BIN_DIR"
-echo "[install] Target lib: $LIB_DIR"
-
-# Check write access
-if [[ ! -w "$INSTALL_FOLDER" ]]; then
-  echo "[install] ERROR: You do not have write access to $INSTALL_FOLDER."
-  echo "[install] Tip: try again with sudo, or use --install-folder=\$HOME/.local"
-  exit 1
-fi
-
-# Create directories
-if ! $DRYRUN; then
-  mkdir -p "$BIN_DIR" "$SCRIPTZ_DIR"
-fi
-
-# Always fetch tarball from GitHub
-tmpdir="$(mktemp -d)"
-curl -L "$REPO_URL" -o "$tmpdir/repo.tar.gz"
-if ! $DRYRUN; then
-  # Extract tarball fully into tmpdir
-  tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir"
-  # Find the extracted folder (scriptz-<branch> or scriptz-<tag>)
-  extracted_dir="$(find "$tmpdir" -mindepth 1 -maxdepth 1 -type d -name "$REPO_NAME-*")"
-  if [[ -z "$extracted_dir" ]]; then
-    echo "[install] ERROR: Could not locate extracted repo folder."
-    exit 1
-  fi
-  # Copy src contents
-  cp -r "$extracted_dir/src/"* "$SCRIPTS_DIR/"
-  # Copy scriptz.sh
-  cp "$extracted_dir/src/scripts/scriptz/scriptz.sh" "$SCRIPTZ_DIR/"
-  # Copy README.md from tarball root
-  cp "$extracted_dir/README.md" "$LIB_DIR/"
-fi
-rm -rf "$tmpdir"
-echo "[install] src/ fetched and installed"
-
-# Symlink scriptz to the installed version (always overwrite)
-TARGET="$BIN_DIR/scriptz"
-SOURCE="$SCRIPTZ_DIR/scriptz.sh"
-
-if ! $DRYRUN; then
-  ln -sf "$SOURCE" "$TARGET"
-  chmod +x "$SOURCE"
-fi
-echo "[install] Linked $TARGET → $SOURCE"
-
-# Write version metadata
-META_FILE="$LIB_DIR/VERSION.json"
-if ! $DRYRUN; then
-  cat > "$META_FILE" <<EOF
-{
-  "name": "$VERSION",
-  "installed_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "source": "$REPO_URL"
-}
-EOF
-fi
-
-echo "[install] Installed version: $VERSION"
-echo "[install] Done."
-
-# Dump README.md to screen with Markdown formatting
-README_FILE="$LIB_DIR/README.md"
-if [[ -f "$README_FILE" ]]; then
-  echo "[install] Displaying README.md for version $VERSION..."
-  if command -v bat >/dev/null 2>&1; then
-    bat --style=plain --paging=always "$README_FILE"
-  elif command -v less >/dev/null 2>&1; then
-    less "$README_FILE"
-  else
-    cat "$README_FILE"
-  fi
-else
-  echo "[install] WARNING: README.md not found in $LIB_DIR"
-fi
+chmod +x "${TARGET_DIR}/uninstall_scriptz.sh"
+echo "Installed scriptz. To uninstall, run: ${TARGET_DIR}/uninstall_scriptz.sh"
