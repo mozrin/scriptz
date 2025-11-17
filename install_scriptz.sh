@@ -86,15 +86,11 @@ fi
 TARGET="$BIN_DIR/scriptz"
 SOURCE="$SCRIPTZ_DIR/scriptz.sh"
 
-if [[ -e "$TARGET" && $FORCE == false ]]; then
-  echo "[install] Symlink $TARGET already exists. Use --force to overwrite."
-else
-  if ! $DRYRUN; then
-    ln -sf "$SOURCE" "$TARGET"
-    chmod +x "$SOURCE"
-  fi
-  echo "[install] Linked $TARGET → $SOURCE"
+if ! $DRYRUN; then
+  ln -sf "$SOURCE" "$TARGET"
+  chmod +x "$SOURCE"
 fi
+echo "[install] Linked $TARGET → $SOURCE"
 
 echo "[install] Installed version: $VERSION"
 echo "[install] Done."
