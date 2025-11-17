@@ -11,7 +11,7 @@ set -euo pipefail
 INSTALL_FOLDER="/usr/local"
 DRYRUN=false
 FORCE=false
-REPO_URL="https://github.com/moztopia/scripts/archive/refs/heads/main.tar.gz"
+REPO_URL="https://github.com/mozrin/scriptz/archive/refs/heads/main.tar.gz"
 
 # Parse options
 for arg in "$@"; do
@@ -62,10 +62,10 @@ if [[ -d "src" ]]; then
   echo "[install] Found local src/ folder"
   if ! $DRYRUN; then
     cp -r src/* "$SCRIPTS_DIR/"
-    if [[ -f "scriptz.sh" ]]; then
-      cp scriptz.sh "$SCRIPTZ_DIR/"
+    if [[ -f "src/scripts/scriptz/scriptz.sh" ]]; then
+      cp "src/scripts/scriptz/scriptz.sh" "$SCRIPTZ_DIR/"
     else
-      echo "[install] ERROR: scriptz.sh not found at repo root"
+      echo "[install] ERROR: scriptz.sh not found at src/scripts/scriptz/"
       exit 1
     fi
   fi
@@ -76,7 +76,7 @@ else
   if ! $DRYRUN; then
     tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=2 "*/src/*"
     cp -r "$tmpdir/src/"* "$SCRIPTS_DIR/"
-    curl -L "https://raw.githubusercontent.com/moztopia/scripts/main/scriptz.sh" -o "$SCRIPTZ_DIR/scriptz.sh"
+    curl -L "https://raw.githubusercontent.com/mozrin/scriptz/main/src/scripts/scriptz/scriptz.sh" -o "$SCRIPTZ_DIR/scriptz.sh"
   fi
   rm -rf "$tmpdir"
   echo "[install] src/ fetched and installed"
