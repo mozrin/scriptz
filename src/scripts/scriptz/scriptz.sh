@@ -26,6 +26,23 @@ INSTALL_FOLDER="${INSTALL_FOLDER:-/usr/local}"
 BIN_DIR="$INSTALL_FOLDER/bin"
 LIB_DIR="$INSTALL_FOLDER/lib"
 
+# Determine active version from symlink target and VERSION.json
+active_version="unknown"
+if [[ -L "$BIN_DIR/scriptz" ]]; then
+  target="$(readlink "$BIN_DIR/scriptz")"
+  base="$(dirname "$target")"
+  if [[ -f "$base/../VERSION.json" ]]; then
+    active_version="$(grep '"name"' "$base/../VERSION.json" | cut -d'"' -f4)"
+  else
+    active_version="$(basename "$(dirname "$target")")"
+  fi
+fi
+
+# Print header each time scriptz runs
+echo "# scriptz (version=$active_version)"
+echo "#    - switches: $*"
+echo ""
+
 # Print usage information
 usage() {
   echo "Usage: scriptz <verb> [--options...]"
@@ -35,7 +52,7 @@ usage() {
 
 # Handle symlink operations
 link_cmd() {
-  case "$1" in
+  case "${1:-}" in
     --list)
       ls -l "$SCRIPTZ_DIR" | grep '->' || echo "[scriptz] No symlinks found"
       ;;
@@ -60,7 +77,7 @@ link_cmd() {
       echo "Usage: scriptz link --list | --add=<src> [--dest=<path>] | --remove=<path>"
       ;;
     *)
-      echo "[scriptz] Unknown link option: $1"
+      echo "[scriptz] Unknown link option: ${1:-}"
       ;;
   esac
 }
@@ -125,6 +142,9 @@ version_cmd() {
         action="delete"
         target="${arg#*=}"
         ;;
+      --list)
+        action="list"
+        ;;
     esac
   done
 
@@ -136,7 +156,28 @@ version_cmd() {
     for v in "${versions[@]}"; do
       marker=""
       [[ "$v" == "$active" ]] && marker="*"
-      date="$(stat -c %y "$LIB_DIR/$v" | cut -d' ' -f1)"
+      if [[ -f "$LIB_DIR/$v/VERSION.json" ]]; then
+        date=$(grep '"installed_at"' "$LIB_DIR/$v/VERSION.json" | cut -d'"' -f4 | cut -dT -f1)
+      else
+        date="$(stat -c %y "$LIB_DIR/$v" | cut -d' ' -f1)"
+      fi
+      echo "  $v [$date] $marker"
+    done
+    echo ""
+    echo "scriptz version --help for more options."
+    return
+  fi
+
+  if [[ "$action" == "list" ]]; then
+    echo "Available versions (newest → oldest):"
+    for v in "${versions[@]}"; do
+      marker=""
+      [[ "$v" == "$active" ]] && marker="*"
+      if [[ -f "$LIB_DIR/$v/VERSION.json" ]]; then
+        date=$(grep '"installed_at"' "$LIB_DIR/$v/VERSION.json" | cut -d'"' -f4 | cut -dT -f1)
+      else
+        date="$(stat -c %y "$LIB_DIR/$v" | cut -d' ' -f1)"
+      fi
       echo "  $v [$date] $marker"
     done
     return
