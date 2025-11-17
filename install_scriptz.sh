@@ -65,32 +65,27 @@ if ! $DRYRUN; then
   mkdir -p "$BIN_DIR" "$SCRIPTZ_DIR"
 fi
 
-# Copy or fetch src folder
-if [[ -d "src" ]]; then
-  echo "[install] Found local src/ folder"
-  if ! $DRYRUN; then
-    cp -r src/* "$SCRIPTS_DIR/"
-    cp "src/scripts/scriptz/scriptz.sh" "$SCRIPTZ_DIR/"
-    [[ -f "README.md" ]] && cp "README.md" "$LIB_DIR/"
+# Always fetch tarball from GitHub
+tmpdir="$(mktemp -d)"
+curl -L "$REPO_URL" -o "$tmpdir/repo.tar.gz"
+if ! $DRYRUN; then
+  # Extract tarball fully into tmpdir
+  tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir"
+  # Find the extracted folder (scriptz-<branch> or scriptz-<tag>)
+  extracted_dir="$(find "$tmpdir" -mindepth 1 -maxdepth 1 -type d -name "$REPO_NAME-*")"
+  if [[ -z "$extracted_dir" ]]; then
+    echo "[install] ERROR: Could not locate extracted repo folder."
+    exit 1
   fi
-else
-  echo "[install] src/ not found locally, fetching from $REPO_URL..."
-  tmpdir="$(mktemp -d)"
-  curl -L "$REPO_URL" -o "$tmpdir/repo.tar.gz"
-  if ! $DRYRUN; then
-    # Extract src folder
-    tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=2 "*/src/*"
-    cp -r "$tmpdir/src/"* "$SCRIPTS_DIR/"
-    # Extract scriptz.sh
-    tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=2 "*/src/scripts/scriptz/scriptz.sh"
-    cp "$tmpdir/src/scripts/scriptz/scriptz.sh" "$SCRIPTZ_DIR/"
-    # Extract README.md from tarball root
-    tar -xzf "$tmpdir/repo.tar.gz" -C "$tmpdir" --wildcards --strip-components=1 "*/README.md" || true
-    [[ -f "$tmpdir/README.md" ]] && cp "$tmpdir/README.md" "$LIB_DIR/"
-  fi
-  rm -rf "$tmpdir"
-  echo "[install] src/ fetched and installed"
+  # Copy src contents
+  cp -r "$extracted_dir/src/"* "$SCRIPTS_DIR/"
+  # Copy scriptz.sh
+  cp "$extracted_dir/src/scripts/scriptz/scriptz.sh" "$SCRIPTZ_DIR/"
+  # Copy README.md from tarball root
+  cp "$extracted_dir/README.md" "$LIB_DIR/"
 fi
+rm -rf "$tmpdir"
+echo "[install] src/ fetched and installed"
 
 # Symlink scriptz to the installed version (always overwrite)
 TARGET="$BIN_DIR/scriptz"
