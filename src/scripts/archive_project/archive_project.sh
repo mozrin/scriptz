@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ./scriptz_library.sh
+source ~/Code/scriptz/src/scripts/scriptz_library.sh
 
 set -euo pipefail
 
