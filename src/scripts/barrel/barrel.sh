@@ -1,185 +1,283 @@
-################################################################################
-# Barrel Script: Create and Delete Dart Barrel Files
-#
-# This script recursively generates or deletes Dart "barrel" files
-# (exports_*.dart) within a target directory and creates a root barrel file.
-#
-# Usage: barrel <create|delete> [--target=./] [--output=barrel] [--exclude=list] [--yes] [--quiet] [--all-files]
-#
-# Options:
-#   create: Generate barrel files.
-#   delete: Remove generated barrel files.
-#   --target: Target directory (default: ./)
-#   --output: Root barrel file name (default: barrel.dart)
-#   --exclude: Comma-separated list of folder names to exclude from recursion.
-#   --yes: Skip create confirmation prompt. (Note: intentionally ignored for delete)
-#   --quiet: Suppress output, implies --yes.
-#   --all-files: For 'delete', changes deletion pattern from 'exports_*.dart' to '*.dart' (still requires magic comment).
-################################################################################
-
 #!/bin/bash
-
-source ~/Code/scriptz/src/scripts/scriptz_library.sh
 
 set -euo pipefail
 
-if [ $# -eq 0 ]; then
-  echo "Usage: barrel <create|delete> [--target=./] [--output=barrel] [--exclude=folder,names,list] [--yes] [--quiet] [--all-files]"
-  exit 1
-fi
-
-VERB="$1"
-shift || true
-
-TARGET="./"
-OUTPUT="barrel"
-EXCLUDES=""
-YES=false
-QUIET=false
-DELETE_ALL_DARTS=false
-
-for arg in "$@"; do
-  case $arg in
-    --target=*) TARGET="${arg#*=}" ;;
-    --output=*) OUTPUT="${arg#*=}" ;;
-    --exclude=*) EXCLUDES="${arg#*=}" ;;
-    --yes) YES=true ;;
-    --quiet) QUIET=true; YES=true ;;
-    --all-files) DELETE_ALL_DARTS=true ;;
-    --help)
-      echo "Usage: barrel <create|delete> [--target=./] [--output=barrel] [--exclude=folder,names,list] [--yes] [--quiet] [--all-files]"
-      exit 0
-      ;;
-  esac
-done
-
-if [[ ! "$OUTPUT" =~ \.dart$ ]]; then
-  OUTPUT="${OUTPUT}.dart"
-fi
-
-TARGET="${TARGET%/}"
+# // created by barrel.sh
+MAGIC_HEADER="/* created by barrel.sh */"
 
 ################################################################################
-# generate_exports
-#
-# Recursively traverses a directory, generating an 'exports_<dir_name>.dart'
-# file in each subdirectory.
-# It exports all sibling .dart files and the generated exports file from
-# each non-excluded child subdirectory.
+# Displays the usage instructions for the script and exits with an error code.
 #
 # Arguments:
-#   $1 (local dir): The directory to process.
+#   None
+# Outputs:
+#   Writes usage text to stdout.
 ################################################################################
-generate_exports() {
 
-  local dir="$1"
-  local name
+show_help() {
+  echo "Usage: barrel <create|delete> [--folder=.] [--target=name] [--yes] [--quiet] [--help]"
+  exit 1
+}
 
-  if [ ! -d "$dir" ]; then
-    echo "❌ Target folder not found: $dir"
-    exit 1
+################################################################################
+# Parses command line arguments and sets global variables.
+#
+# Arguments:
+#   $@ - Command line arguments passed to the script.
+# Outputs:
+#   Sets globals: VERB, FOLDER, TARGET_NAME, YES, QUIET.
+################################################################################
+
+parse_arguments() {
+  if [ $# -eq 0 ]; then
+    echo "Error: Missing command."
+    show_help
   fi
 
-  name=$(basename "$dir")
+  VERB="$1"
+  shift
+
+  FOLDER="."
+  TARGET_NAME=""
+  YES=false
+  QUIET=false
+
+  for arg in "$@"; do
+    case $arg in
+      --folder=*) FOLDER="${arg#*=}" ;;
+      --target=*) TARGET_NAME="${arg#*=}" ;;
+      --yes)      YES=true ;;
+      --quiet)    QUIET=true; YES=true ;;
+      --help)     show_help ;;
+      *)          echo "Error: Unknown option $arg"; show_help ;;
+    esac
+  done
+
+  FOLDER="${FOLDER%/}"
+}
+
+################################################################################
+# Determines the full path for the root barrel file based on inputs.
+#
+# Arguments:
+#   None (Uses global FOLDER and TARGET_NAME)
+# Outputs:
+#   Sets global ROOT_FILE.
+################################################################################
+
+determine_root_filename() {
+  if [ -z "$TARGET_NAME" ]; then
+    if [ "$FOLDER" = "." ]; then
+      TARGET_NAME="barrel"
+    else
+      TARGET_NAME=$(basename "$FOLDER")
+    fi
+  fi
+
+  if [[ ! "$TARGET_NAME" =~ \.dart$ ]]; then
+    TARGET_NAME="${TARGET_NAME}.dart"
+  fi
+
+  ROOT_FILE="./$TARGET_NAME"
+}
+
+################################################################################
+# Checks if a file contains the magic header indicating it was created by this 
+# script.
+#
+# Arguments:
+#   $1 - Path to the file to check.
+# Returns:
+#   0 if safe to delete (header matches), 1 otherwise.
+################################################################################
+
+is_safe_to_delete() {
+  local file="$1"
+  if [ -f "$file" ]; then
+    local header
+    header=$(head -n 1 "$file")
+    if [ "$header" = "$MAGIC_HEADER" ]; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+################################################################################
+# Recursively generates barrel files.
+# If an output_file is provided, it writes to that specific file.
+# If not, it generates the standard 'exports_<dirname>.dart' inside the 
+# directory.
+#
+# Arguments:
+#   $1 - Directory to process.
+#   $2 - (Optional) Explicit output filename. If empty, auto-generates name.
+# Outputs:
+#   Creates the barrel file and recursively processes subdirectories.
+################################################################################
+
+generate_recursive() {
+  local dir="$1"
+  local explicit_output="$2"
+  local output_file
+  local base_name
   
-  local outfile="$dir/exports_${name}.dart"
+  base_name=$(basename "$dir")
+
+  if [ -n "$explicit_output" ]; then
+    output_file="$explicit_output"
+  else
+    output_file="$dir/exports_${base_name}.dart"
+  fi
+
   {
-    echo "// created by barrel.sh"
+    echo "$MAGIC_HEADER"
     echo ""
 
     for f in "$dir"/*.dart; do
       [ -e "$f" ] || continue
-      local base
-      base=$(basename "$f")
-      if [[ "$base" != exports_* ]]; then
-        echo "export \"$base\";"
-      fi
-    done
-    for d in "$dir"/*/; do
-      [ -d "$d" ] || continue
-      local child
-      child=$(basename "$d")
-      if [[ ",$EXCLUDES," == *",$child,"* ]]; then
+      local fname
+      fname=$(basename "$f")
+
+      if [[ "$dir/$fname" == "$output_file" ]] || [[ "./$fname" == "$output_file" ]]; then
         continue
       fi
-      generate_exports "$d"
-      echo "export \"$child/exports_${child}.dart\";"
+
+      if [[ "$fname" == exports_*.dart ]]; then
+        continue
+      fi
+
+      if [[ "$fname" == *.g.dart ]]; then
+        continue
+      fi
+
+      local header
+      header=$(head -n 1 "$f")
+      if [[ "$header" == "$MAGIC_HEADER" ]]; then
+        continue
+      fi
+
+      echo "export \"$fname\";"
     done
-  } > "$outfile"
 
+    for d in "$dir"/*/; do
+      [ -d "$d" ] || continue
+      d="${d%/}"
+      local sub_name
+      sub_name=$(basename "$d")
+      
+      generate_recursive "$d" ""
+      
+      echo "export \"$sub_name/exports_${sub_name}.dart\";"
+    done
+  } > "$output_file"
 }
 
-
 ################################################################################
-# delete_files
+# Orchestrates the deletion of the root file and recursive export files.
 #
-# Prompts the user for confirmation, then searches for and deletes
-# all files created by this script: the root output file and all
-# 'exports_*.dart' files (or '*.dart' if --all-files is used), verified by the 
-# magic comment "// created by barrel.sh".
-# The --yes flag is intentionally ignored for the prompt.
+# Arguments:
+#   None (Uses globals)
+# Outputs:
+#   Deletes files and writes status to stdout.
 ################################################################################
-delete_files() {
 
-  local export_file_pattern="exports_*.dart"
-  if [ "$DELETE_ALL_DARTS" = true ]; then
-    export_file_pattern="*.dart"
-  fi
-
-  echo "--------------------------------------------------------"
-  echo "Preparing to delete generated barrel files:"
-  echo "  - Root file: $(basename "$OUTPUT")"
-  echo "  - Recursive files pattern: $export_file_pattern"
-  echo "  - Only files starting with '// created by barrel.sh' will be deleted."
-  echo "--------------------------------------------------------"
-
-  read -p "Delete generated barrel files? [y/N] " ans
-  [[ "$ans" =~ ^[Yy]$ ]] || exit 0
-  
-  for f in $(find ./ -type f -name "$(basename "$OUTPUT")"); do
-    if [ "$(head -n1 "$f")" = "// created by barrel.sh" ]; then
-      rm "$f"
-    fi
-  done
-
-  for f in $(find ./ -type f -name "$export_file_pattern"); do
-    if [ "$(head -n1 "$f")" = "// created by barrel.sh" ]; then
-      rm "$f"
-    fi
-  done
-
+perform_delete() {
   if [ "$QUIET" = false ]; then
-    echo "✅ Barrel files deleted"
+    echo "--------------------------------------------------"
+    echo "Deleting barrel files..."
+    echo "  Root: $ROOT_FILE"
+    echo "  Scan: $FOLDER"
+    echo "--------------------------------------------------"
   fi
-  
-}
-
-if [ "$VERB" = "create" ]; then
-
-  echo "--------------------------------------------------------"
-  echo "Preparing to create barrel files:"
-  echo "  - Target directory: $TARGET"
-  echo "  - Root barrel file: $OUTPUT"
-  echo "  - Exclusion list: ${EXCLUDES:-<none>}"
-  echo "--------------------------------------------------------"
 
   if [ "$YES" = false ]; then
-    read -p "Create barrel files? [y/N] " ans
-    [[ "$ans" =~ ^[Yy]$ ]] || exit 0
+    read -p "Delete generated files? [y/N] " -n 1 -r
+    echo ""
+    [[ $REPLY =~ ^[Yy]$ ]] || exit 0
   fi
+
+  if is_safe_to_delete "$ROOT_FILE"; then
+    rm "$ROOT_FILE"
+    [ "$QUIET" = false ] && echo "Deleted: $ROOT_FILE"
+  fi
+
+  find "$FOLDER" -type f -name "exports_*.dart" | while read -r file; do
+    if is_safe_to_delete "$file"; then
+       rm "$file"
+       [ "$QUIET" = false ] && echo "Deleted: $file"
+    fi
+  done
   
-  generate_exports "$TARGET"
-  rootfile="./$OUTPUT"
-  {
-    echo "// created by barrel.sh"
-    echo "export \"$TARGET/exports_$(basename "$TARGET").dart\";"
-  } > "$rootfile"
-  if [ "$QUIET" = false ]; then
-    echo "✅ Root barrel created: $rootfile"
+  [ "$QUIET" = false ] && echo "Done."
+}
+
+################################################################################
+# Orchestrates the creation of the barrel files.
+#
+# Arguments:
+#   None (Uses globals)
+# Outputs:
+#   Creates files and writes status to stdout.
+################################################################################
+
+perform_create() {
+  if [ ! -d "$FOLDER" ]; then
+    echo "Error: Folder '$FOLDER' does not exist."
+    exit 1
   fi
-elif [ "$VERB" = "delete" ]; then
-  delete_files
-else
-  echo "Usage: barrel <create|delete> [options]"
-  exit 1
-fi
+
+  if [ "$QUIET" = false ]; then
+    echo "--------------------------------------------------"
+    echo "Creating barrel files..."
+    echo "  Root: $ROOT_FILE"
+    echo "  Scan: $FOLDER"
+    echo "--------------------------------------------------"
+  fi
+
+  if [ "$YES" = false ]; then
+    read -p "Create barrel files? [y/N] " -n 1 -r
+    echo ""
+    [[ $REPLY =~ ^[Yy]$ ]] || exit 0
+  fi
+
+  if [ "$FOLDER" = "." ]; then
+    generate_recursive "." "$ROOT_FILE"
+  else
+    generate_recursive "$FOLDER" ""
+    
+    local inner_export="$FOLDER/exports_$(basename "$FOLDER").dart"
+    {
+      echo "$MAGIC_HEADER"
+      echo ""
+      echo "export \"$inner_export\";"
+    } > "$ROOT_FILE"
+  fi
+
+  if [ "$QUIET" = false ]; then
+    echo "Done."
+  fi
+}
+
+################################################################################
+# Main execution block.
+#
+# Arguments:
+#   $@ - Command line arguments.
+################################################################################
+
+main() {
+  parse_arguments "$@"
+  determine_root_filename
+
+  if [ "$VERB" = "create" ]; then
+    perform_create
+  elif [ "$VERB" = "delete" ]; then
+    perform_delete
+  else
+    echo "Error: Invalid command '$VERB'."
+    show_help
+  fi
+}
+
+main "$@"
