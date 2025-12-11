@@ -1,0 +1,115 @@
+run:
+  types:
+    - dart
+    - flutter
+    - json
+    - yaml
+    - markdown
+  parameters:
+    - no-whitespace
+    - yes
+    - chunk=10100
+    - clean
+
+types:
+  - dart
+  - flutter
+  - yaml
+  - markdown
+  - c
+  - cpp
+  - csharp
+  - javascript
+  - typescript
+  - golang
+  - sql
+  - json
+
+definitions:
+  global:
+    include: []
+    exclude:
+      - ".git"
+      - "build"
+      - ".dart_tool"
+      - "node_modules"
+      - "dist"
+      - "out"
+      - "target"
+
+  dart:
+    include:
+      - "*.dart"
+    exclude: []
+
+  flutter:
+    include:
+      - "lib/**/*.dart"
+      - "bin/**/*.dart"
+      - "test/**/*.dart"
+      - "pubspec.yaml"
+    exclude:
+      - "build"
+      - ".dart_tool"
+
+  yaml:
+    include:
+      - "*.yaml"
+      - "*.yml"
+    exclude: []
+
+  markdown:
+    include:
+      - "*.md"
+      - "*.markdown"
+    exclude: []
+
+  c:
+    include:
+      - "*.c"
+      - "*.h"
+    exclude: []
+
+  cpp:
+    include:
+      - "*.cpp"
+      - "*.cc"
+      - "*.cxx"
+      - "*.hpp"
+      - "*.hh"
+      - "*.hxx"
+    exclude: []
+
+  csharp:
+    include:
+      - "*.cs"
+    exclude: []
+
+  javascript:
+    include:
+      - "*.js"
+      - "*.mjs"
+      - "*.cjs"
+    exclude: []
+
+  typescript:
+    include:
+      - "*.ts"
+      - "*.tsx"
+    exclude: []
+
+  golang:
+    include:
+      - "*.go"
+    exclude:
+      - "vendor"
+
+  sql:
+    include:
+      - "*.sql"
+    exclude: []
+
+  json:
+    include:
+      - "*.json"
+    exclude: []
