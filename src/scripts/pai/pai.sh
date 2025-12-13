@@ -171,7 +171,7 @@ expand_selection() {
   local selection="$1"
   local template_types=""
 
-  template_types=$(yq ".templates.$selection[]" "$YAML_FILE" 2>/dev/null || true)
+  template_types=$(yq ".templates.${selection}[]" "$YAML_FILE" 2>/dev/null || true)
 
   if [ -n "$template_types" ]; then
     echo "$template_types"
@@ -347,7 +347,7 @@ confirm_run() {
 
   echo "About to run pai with:"
   echo "  YAML file: $YAML_FILE"
-  echo "  Types: ${FINAL_TYPES[@]}"
+  echo "  Types: ${FINAL_TYPES[*]}"
   echo "  Chunk size: ${CHUNK_SIZE:-none}"
   echo "  No whitespace: $([ $NO_WS -eq 1 ] && echo yes || echo no)"
   echo "  Dry run: $([ $DRY_RUN -eq 1 ] && echo yes || echo no)"
