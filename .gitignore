@@ -1,5 +1,6 @@
 # DO NOT track these SPECIFIC project files.
 .env
+src/uninstall_scriptz.sh
 
 # DO NOT track these SPECIFIC project directories.
 
