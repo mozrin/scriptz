@@ -1,0 +1,9 @@
+{
+    "packages": {
+        ".": {
+            "release-type": "simple",
+            "package-name": "scriptz",
+            "include-component-in-tag": false
+        }
+    }
+}
