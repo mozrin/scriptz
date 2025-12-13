@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/scriptz-banner.png" alt="Scriptz Banner" width="100%">
+</div>
+
 # 🛠️ Scriptz
 
 A collection of handy command-line tools for developers. Clone it, install it, use it. Fork it to add your own!
