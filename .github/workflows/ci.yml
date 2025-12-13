@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-shell:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find shell scripts
+        id: find-scripts
+        run: |
+          scripts=$(find . -name "*.sh" -type f | head -50)
+          if [ -z "$scripts" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
+          else
+            echo "found=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install ShellCheck
+        if: steps.find-scripts.outputs.found == 'true'
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        if: steps.find-scripts.outputs.found == 'true'
+        run: |
+          find . -name "*.sh" -type f -exec shellcheck {} +
+
+  lint-python:
+    name: Lint Python Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Find Python scripts
+        id: find-scripts
+        run: |
+          scripts=$(find . -name "*.py" -type f | head -50)
+          if [ -z "$scripts" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
+          else
+            echo "found=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Ruff
+        if: steps.find-scripts.outputs.found == 'true'
+        run: pip install ruff
+
+      - name: Run Ruff
+        if: steps.find-scripts.outputs.found == 'true'
+        run: |
+          ruff check .
