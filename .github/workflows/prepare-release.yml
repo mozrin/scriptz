@@ -1,0 +1,37 @@
+name: Prepare Release
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: prepare release"
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: release-candidate
+          delete-branch: true
+          title: "chore: merge develop into main"
+          body: |
+            Automated PR to merge `develop` into `main`.
+
+            This PR aggregates all changes from `develop` since the last release.
+            When merged, `release-please` will run on `main` to create the GitHub Release.
+          labels: release
+          assignees: mozrin
+          reviewers: mozrin
+          base: main
