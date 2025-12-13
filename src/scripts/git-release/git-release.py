@@ -301,7 +301,7 @@ Examples:
     log("=" * 50, config)
     log(" Release Summary", config)
     log("=" * 50, config)
-    log(f"  Branch:  main", config)
+    log("  Branch:  main", config)
     log(f"  Tag:     {final_tag}", config)
     if config.release_name:
         log(f"  Name:    {config.release_name}", config)

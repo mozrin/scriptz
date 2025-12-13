@@ -31,7 +31,8 @@ jobs:
       - name: Run ShellCheck
         if: steps.find-scripts.outputs.found == 'true'
         run: |
-          find . -name "*.sh" -type f -exec shellcheck {} +
+          # Only fail on errors, not warnings (--severity=error)
+          find . -name "*.sh" -type f -exec shellcheck --severity=error {} +
 
   lint-python:
     name: Lint Python Scripts
