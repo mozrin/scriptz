@@ -29,6 +29,8 @@ fi
 
 # Collect installed symlinks
 declare -a INSTALLED_LINKS=()
+NEW_COUNT=0
+UPDATED_COUNT=0
 
 echo "Installing scriptz to ${BIN_DIR}..."
 
@@ -54,8 +56,17 @@ for tool_dir in "${SCRIPTS_DIR}"/*/; do
     # Make the script executable
     chmod +x "${tool_script}"
     
-    # Create symlink
+    # Check if symlink already exists
     link_path="${BIN_DIR}/${link_name}"
+    if [[ -L "${link_path}" ]]; then
+        status="updated"
+        ((UPDATED_COUNT++)) || true
+    else
+        status="new"
+        ((NEW_COUNT++)) || true
+    fi
+    
+    # Create symlink
     if [[ -n "${USE_SUDO}" ]]; then
         ${USE_SUDO} ln -sf "${tool_script}" "${link_path}"
     else
@@ -65,8 +76,9 @@ for tool_dir in "${SCRIPTS_DIR}"/*/; do
     # Track the created symlink
     INSTALLED_LINKS+=("${link_path}")
     
-    echo "  Linked: ${link_name} -> ${tool_script}"
+    echo "  [${status}] ${link_name} -> ${tool_script}"
 done
+
 
 # Generate uninstall script with embedded list
 cat > "${UNINSTALL_SCRIPT}" << 'HEADER'
@@ -133,5 +145,8 @@ chmod +x "${UNINSTALL_SCRIPT}"
 
 echo ""
 echo "Installed ${#INSTALLED_LINKS[@]} scriptz tools to ${BIN_DIR}"
+[[ ${NEW_COUNT} -gt 0 ]] && echo "  New: ${NEW_COUNT}"
+[[ ${UPDATED_COUNT} -gt 0 ]] && echo "  Updated: ${UPDATED_COUNT}"
 echo ""
 echo "To uninstall, run: ${UNINSTALL_SCRIPT}"
+
