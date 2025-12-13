@@ -1,0 +1,30 @@
+name: Prepare Release
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "chore: merge develop into main" \
+            --body "Automated PR to merge \`develop\` into \`main\`.\n\nThis PR aggregates all changes from \`develop\` since the last release.\nWhen merged, \`release-please\` will run on \`main\` to create the GitHub Release." \
+            --label release \
+            --assignee mozrin \
+            --reviewer mozrin \
+          || echo "PR already exists or failed to create"
