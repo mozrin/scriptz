@@ -6,7 +6,7 @@ on:
       - develop
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -16,22 +16,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: prepare release"
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          branch: release-candidate
-          delete-branch: true
-          title: "chore: merge develop into main"
-          body: |
-            Automated PR to merge `develop` into `main`.
-
-            This PR aggregates all changes from `develop` since the last release.
-            When merged, `release-please` will run on `main` to create the GitHub Release.
-          labels: release
-          assignees: mozrin
-          reviewers: mozrin
-          base: main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "chore: merge develop into main" \
+            --body "Automated PR to merge \`develop\` into \`main\`.\n\nThis PR aggregates all changes from \`develop\` since the last release.\nWhen merged, \`release-please\` will run on \`main\` to create the GitHub Release." \
+            --label release \
+            --assignee mozrin \
+            --reviewer mozrin \
+          || echo "PR already exists or failed to create"
