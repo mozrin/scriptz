@@ -12,7 +12,7 @@ Please include a summary of the change and which issue is fixed.
 ## Checklist
 
 - [ ] My code follows the [Conventional Commits](https://www.conventionalcommits.org/) specification.
-    - *Example: `feat: add new tool` or `fix: broken link`*
+- *Example: `feat: add new tool` or `fix: broken link`*
 - [ ] I have performed a self-review of my own code.
 - [ ] I have commented my code, particularly in hard-to-understand areas.
 - [ ] I have made corresponding changes to the documentation.
