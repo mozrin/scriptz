@@ -1,15 +1,58 @@
 #!/bin/bash
 # idea.sh
 # Script to scaffold creative or business projects by type and name.
-# Usage: idea <type> <project_name> [options]
 
-# ■ Path to ancillary modules
+set -euo pipefail
+
+# Path to ancillary modules
 MODULES_PATH="/home/mozrin/Code/scriptz/src/scripts/idea"
 
+show_help() {
+  cat <<EOF
+idea - Scaffold creative and business projects
+
+DESCRIPTION
+  Creates a folder structure with placeholder markdown files for different
+  project types. Each type has its own template with relevant sections.
+
+USAGE
+  idea <type> <project_name> [options]
+
+ARGUMENTS
+  <type>            Required. The project type (see TYPES below).
+  <project_name>    Required. Name for the project folder.
+
+TYPES
+  tv_series         TV series pitch document with seasons/episodes structure
+  class             Educational class or course structure
+  (other)           Generic project with basic Content folder
+
+OPTIONS
+  --help            Show this help message and exit
+  (Additional options depend on the project type)
+
+TV_SERIES OPTIONS
+  --episodes=N      Episodes per season (default: 8)
+  --seasons=N       Number of seasons (default: 1)
+  --no-pilot        Skip pilot episode template
+  --no-trailer      Skip trailer template
+
+EXAMPLES
+  idea tv_series "Breaking Bad"
+  idea tv_series "The Office" --episodes=22 --seasons=9
+  idea class "Python 101"
+
+EOF
+  exit 0
+}
+
 parse_args() {
+  if [ "${1:-}" = "--help" ] || [ -z "${1:-}" ]; then
+    show_help
+  fi
   TYPE="$1"
-  PROJECT="$2"
-  shift 2
+  PROJECT="${2:-}"
+  shift 2 2>/dev/null || true
   OPTIONS=("$@")
 }
 
@@ -17,9 +60,11 @@ validate_args() {
   if [ -z "$TYPE" ] || [ -z "$PROJECT" ]; then
     echo "Error: type and project_name are required."
     echo "Usage: idea <type> <project_name> [options]"
+    echo "Try 'idea --help' for more information."
     exit 1
   fi
 }
+
 
 get_blurb() {
   declare -A blurbs

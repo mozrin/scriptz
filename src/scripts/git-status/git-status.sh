@@ -1,14 +1,50 @@
 #!/bin/bash
 
+set -euo pipefail
+
 SOURCE=~/Code
 WIDTH=80
 SKIP_NO_CHANGES=0
 
+show_help() {
+  cat <<EOF
+git-status - Multi-repository status overview
+
+DESCRIPTION
+  Scans a directory for git repositories and displays a summary of each,
+  including the current branch, pending changes, and available branches.
+  Great for managing multiple projects at once.
+
+USAGE
+  git-status [options]
+
+OPTIONS
+  --source=PATH       Directory to scan for git repos (default: ~/Code)
+  --width=N           Width of the output table in characters (default: 80)
+  --skip-no-changes   Only show repos with uncommitted changes
+  --help              Show this help message and exit
+
+OUTPUT
+  Displays a formatted table for each repository showing:
+  - Repository name and local folder
+  - Current branch name
+  - Status: "up-to-date" (green) or "changes pending" (yellow)
+  - List of all local branches
+
+EXAMPLES
+  git-status
+  git-status --source=/projects
+  git-status --skip-no-changes
+  git-status --source=~/work --width=120
+
+EOF
+  exit 0
+}
+
 for arg in "$@"; do
   case $arg in
     --help)
-      echo "Usage: git-status [--source=PATH] [--width=N] [--skip-no-changes]"
-      exit 0
+      show_help
       ;;
     --source=*)
       SOURCE="${arg#--source=}"
@@ -21,6 +57,7 @@ for arg in "$@"; do
       ;;
   esac
 done
+
 
 ROOT=$(realpath "$SOURCE")
 echo "Root: $ROOT"

@@ -1,13 +1,8 @@
 #!/bin/bash
 # tv_series_template.sh
-# Script to create a TV series pitch document structure in folders and markdown files
-# Supports flags:
-#   --episodes=N   (default: 8, must be integer >0)
-#   --seasons=N    (default: 1)
-#   --show=NAME    (REQUIRED, spaces converted to underscores)
-#   --no-pilot     (skip pilot_episode.md)
-#   --no-trailer   (skip trailer.md)
-#   --help         (show usage)
+# Script to create a TV series pitch document structure
+
+set -euo pipefail
 
 # Defaults
 EPISODES=8
@@ -15,6 +10,51 @@ SEASONS=1
 SHOW=""
 INCLUDE_PILOT=true
 INCLUDE_TRAILER=true
+
+show_help() {
+  cat <<EOF
+tv_series_template - Create a TV series pitch document structure
+
+DESCRIPTION
+  Creates a complete folder structure with markdown files for developing
+  a TV series pitch. Includes sections for characters, world-building,
+  episode guides, production considerations, and more.
+
+USAGE
+  tv_series_template --show=NAME [options]
+
+ARGUMENTS
+  --show=NAME       Required. Name of the TV series (spaces become underscores)
+
+OPTIONS
+  --episodes=N      Episodes per season (default: 8)
+  --seasons=N       Number of seasons to create (default: 1)
+  --no-pilot        Skip creating pilot_episode.md
+  --no-trailer      Skip creating trailer.md
+  --help            Show this help message and exit
+
+CREATED STRUCTURE
+  01_Cover_Page/          - Title and creator info
+  02_Executive_Summary/   - One-paragraph overview
+  03_Series_Overview/     - Genre, format, audience
+  04_Themes_Core_Concepts/- Central themes
+  05_Characters/          - Main and supporting characters
+  06_World_Building/      - Settings and visual identity
+  07_Season_Structure/    - Season arc and episode count
+  08_Episode_Guide/       - Episode cards and synopses
+  09_Production_Considerations/ - Budget, casting, effects
+  10_Market_Positioning/  - Audience and distribution
+  11_Closing_Section/     - Vision statement and call to action
+
+EXAMPLES
+  tv_series_template --show="Breaking Bad"
+  tv_series_template --show="The Office" --episodes=22 --seasons=9
+  tv_series_template --show="My Show" --no-pilot --no-trailer
+
+EOF
+  exit 0
+}
+
 
 # Blurb function
 get_blurb() {
@@ -68,8 +108,7 @@ for arg in "$@"; do
       INCLUDE_TRAILER=false
       ;;
     --help)
-      echo "Usage: $0 --show=NAME [--episodes=N] [--seasons=N] [--no-pilot] [--no-trailer] [--help]"
-      exit 0
+      show_help
       ;;
     *)
       echo "Unknown option: $arg"

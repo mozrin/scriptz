@@ -2,10 +2,54 @@
 
 set -e
 
+show_help() {
+  cat <<EOF
+git-release - Create a versioned release from develop to main
+
+DESCRIPTION
+  Automates the release workflow: commits version changes, merges develop
+  into main, creates a git tag, and pushes everything to origin.
+
+USAGE
+  git-release new --number=<version> --name=<name> [options]
+
+ARGUMENTS
+  new               Required. The release command (only 'new' is supported).
+
+OPTIONS
+  --number=VERSION  Required. The version number (e.g., 1.2.0)
+  --name=NAME       Required. The release name (e.g., "Holiday Update")
+  --composer        Update version in composer.json before committing
+  --help            Show this help message and exit
+
+WORKFLOW
+  1. Validates you're on the develop branch with no uncommitted changes
+  2. (Optional) Updates composer.json version if --composer is set
+  3. Commits with message "Release VERSION NAME"
+  4. Pushes develop to origin
+  5. Checks out main and merges develop
+  6. Pushes main to origin
+  7. Creates annotated tag vVERSION with message "NAME"
+  8. Pushes tag to origin
+
+EXAMPLES
+  git-release new --number=1.0.0 --name="Initial Release"
+  git-release new --number=2.1.0 --name="Spring Update" --composer
+
+EOF
+  exit 0
+}
+
+if [ "${1:-}" = "--help" ]; then
+  show_help
+fi
+
 if [ "$1" != "new" ]; then
-  echo "Usage: git-release new --number=<release_number> --name=<release_name> [--composer]"
+  echo "Usage: git-release new --number=<version> --name=<name> [--composer]"
+  echo "Try 'git-release --help' for more information."
   exit 1
 fi
+
 
 for arg in "$@"; do
   case $arg in

@@ -9,9 +9,45 @@ TARGET_ORG="maqbara"
 QUIET=false
 
 usage() {
-  echo "Usage: archive_project <project_name> [--org=ORG] [--quiet] [--help]"
+  cat <<EOF
+archive_project - Archive a GitHub repository
+
+DESCRIPTION
+  Transfers a repository to an archive organization, renames it with a
+  timestamp, marks it as private, and archives it. Useful for retiring
+  projects while preserving their history.
+
+USAGE
+  archive_project <project_name> [options]
+
+ARGUMENTS
+  <project_name>    Required. The name of the repository to archive.
+
+OPTIONS
+  --org=ORG         Source GitHub organization (default: moztopia)
+  --quiet           Suppress all output except errors
+  --help            Show this help message and exit
+
+WHAT IT DOES
+  1. Transfers the repo from SOURCE_ORG to maqbara (archive org)
+  2. Renames it to <project_name>-<YYYYMMDD-HHMM>
+  3. Marks the transferred repo as private
+  4. Archives the repo (read-only)
+
+REQUIREMENTS
+  - GitHub CLI (gh) must be installed and authenticated
+  - You must have transfer permissions on the source repo
+  - The archive org (maqbara) must accept transfers
+
+EXAMPLES
+  archive_project my-old-project
+  archive_project legacy-api --org=mycompany
+  archive_project deprecated-lib --quiet
+
+EOF
   exit 0
 }
+
 
 PROJECT_NAME=""
 for arg in "$@"; do
